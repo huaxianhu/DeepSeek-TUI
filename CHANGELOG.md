@@ -65,6 +65,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SOFYA_API_KEY` fallback, while keeping Sofya scoped to web search rather
   than model-provider routing (#2790). Thanks @yusufgurdogan for the
   implementation.
+- Added Xiaomi MiMo `mode` / `XIAOMI_MIMO_MODE` / `MIMO_MODE` selection for
+  Token Plan region endpoints and pay-as-you-go routing, plus dedicated Token
+  Plan env keys for `tp-*` subscriptions (#2621, #2627). Thanks @springeye for
+  the request and @xyuai for the implementation.
 
 ### Changed
 
