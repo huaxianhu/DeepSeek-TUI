@@ -282,7 +282,7 @@ Provider IDs, environment variables, model defaults, and capability notes are
 kept in the provider registry document.
 
 Use `/model auto` when you want CodeWhale to choose the model and thinking
-level per turn. Use a fixed model when you need repeatable benchmarking or a
+level per turn. Use a fixed model when you need repeatable comparisons or a
 strict cost profile.
 
 Use `/compact` when a session gets long and the model starts carrying too much
@@ -403,8 +403,9 @@ If a repository has its own instructions, treat them as part of the active
 work. Read the local guidance before editing, and keep any contribution within
 the repository's conventions.
 
-Next: see the "Publishing Your Own Skill" section in [README.md](../README.md)
-and configuration details in [CONFIGURATION.md](CONFIGURATION.md).
+Next: see [SKILL_INVOCATION_DESIGN.md](SKILL_INVOCATION_DESIGN.md) for skill
+activation behavior and [CONFIGURATION.md](CONFIGURATION.md) for config paths
+and project authority.
 
 ## 10. Getting Help
 

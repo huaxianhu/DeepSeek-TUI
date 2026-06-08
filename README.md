@@ -1,620 +1,156 @@
 # CodeWhale
 
-> DeepSeek-first terminal coding agent with a durable harness: approval-gated
-> local edits, sub-agents, provider/model routing, live verification, rollback,
-> relay/continuity handoffs, and a v0.9 track for typed WhaleFlow workflows.
+> Local-first agent harness for DeepSeek V4 and open models: operating identity,
+> nested authority, and a local evidence loop.
 
-[简体中文 README](README.zh-CN.md)
-[日本語 README](README.ja-JP.md)
-[Tiếng Việt README](README.vi.md)
+[简体中文 README](README.zh-CN.md) · [日本語 README](README.ja-JP.md) · [Tiếng Việt README](README.vi.md)
 
 [![CI](https://github.com/Hmbown/CodeWhale/actions/workflows/ci.yml/badge.svg)](https://github.com/Hmbown/CodeWhale/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/codewhale)](https://www.npmjs.com/package/codewhale)
 [![crates.io](https://img.shields.io/crates/v/codewhale-cli?label=crates.io)](https://crates.io/crates/codewhale-cli)
 [DeepWiki project index](https://deepwiki.com/Hmbown/CodeWhale)
 
 ![codewhale screenshot](assets/screenshot.png)
 
-## What CodeWhale Does
+## The Idea
 
-CodeWhale is a terminal-native coding harness for agentic model work. It gives
-the model a durable prompt constitution, a typed tool surface, approval gates,
-side-git rollback, LSP feedback after edits, cost/cache telemetry, and
-concurrent sub-agents that can investigate or implement without blocking the
-parent turn.
+Most coding agents start by adding power: more tools, more context, more
+autonomy. CodeWhale starts by assigning responsibility.
 
-It is DeepSeek-first, not DeepSeek-only. The default path targets DeepSeek V4,
-while provider routes such as OpenRouter, NVIDIA NIM, Arcee, Xiaomi MiMo,
-SiliconFlow, Fireworks, OpenAI-compatible gateways, self-hosted SGLang/vLLM, and
-Hugging Face stay explicit. Provider, model, base URL, and credentials are
-separate choices so direct-provider APIs do not get blurred with OpenRouter
-aliases.
+Before an agent edits a repo, it should have an address: this terminal, this
+user, this branch, this session. That is the ego layer. Not swagger; continuity.
+Not a persona mask; the place where responsibility attaches.
 
-The product goal is practical continuity. A long CodeWhale task should survive
-model routing, compaction, shell noise, branch experiments, contributor review,
-and a fresh maintainer session without losing the reason the work started or
-who helped move it forward.
+Then it needs law. A real workspace is a conflict stack: current user intent,
+repo instructions, shell output, stale memory, previous handoffs, safety policy,
+and half-finished work all compete inside the same turn. CodeWhale gives those
+sources an order through the CodeWhale Constitution:
 
-## Active v0.9 Track
+- **Ego is addressable.** The agent is an instance in this terminal and this
+  workspace, not a model card or leaderboard score.
+- **Evidence outranks narration.** Tool output beats a guess. A failed command
+  is reported as a failed command. Verification is part of the task.
+- **User intent stays sovereign.** The current request outranks stale repo
+  guidance, memory, previous handoffs, and personality overlays.
+- **Local law is explicit.** Repositories can add `.codewhale/constitution.json`
+  for durable project authority, protected invariants, branch policy, and
+  verification rules.
+- **Runtime policy is enforced.** Modes, approval gates, sandboxing, rollback,
+  and tool schemas are code, not advice the model has to remember.
 
-v0.9.0 is not released yet. The current branch is a stewardship lane for making
-long-running CodeWhale work easier to continue, review, and hand off without
-turning the README into release notes.
+The product is the ordering layer around the model: who is acting, whose law
+applies, what evidence exists, and how the next human or agent can continue.
 
-The v0.9 track keeps the same DeepSeek-first harness and adds work in these
-areas:
+## What Ships
 
-| Track | What is changing |
-| --- | --- |
-| Relay and continuity | `/relay`, fork-state handoff, and rich PlanArtifact context preserve the goal, why it matters, evidence, constraints, blockers, changed files, verification state, and the next action. |
-| Transcript calmness | Dense read/search/list-style tool runs can collapse into expandable groups, while failures, running work, shell commands, writes, diffs, plans, and reviews stay visible. |
-| Runtime sessions and workspaces | Branch work extends session/thread runtime APIs, including workspace-aware thread updates, completed-thread session saves, and safer guards around active turns. Treat this as v0.9-track capability until the release ships. |
-| Sub-agent recovery | Live per-step timeout recovery can preserve checkpoint metadata and let `agent_eval { continue: true }` resume an interrupted child in the same runtime. Cold-restart continuation is still a follow-up; persisted child tasks are not rehydrated yet. |
-| Project context stability | Bounded project-context packs and generated instructions keep large/noisy repositories from turning the first turn into an unbounded filesystem walk. |
-| HarmonyOS / OHOS | The lane carries safe OpenHarmony setup, OHOS platform guards, self-update disablement on OHOS, and target gating for PTY and Starlark execpolicy paths. Full OHOS target builds still require a host with the OpenHarmony native SDK configured. |
-| Nix and Starlark compatibility | Dependency stewardship keeps OHOS builds from pulling incompatible Nix-chain crates through PTY or Starlark paths where those features are gated. |
-| HarnessProfile | The branch carries the typed `HarnessPosture` / `HarnessProfile` config data model, strict schema validation, and a documented [profile cutline](docs/HARNESS_PROFILE_CUTLINE.md). Provider/model posture resolution, prompt/tool/runtime behavior, telemetry, and status display remain follow-up work. |
-| Contributor stewardship | Harvested PRs stay credited, contributor identity mapping is machine-readable, and community gates remain dry-run and human-toned while the branch is reviewed. |
-| WhaleFlow | Typed branch/leaf workflows, deterministic replay, pod-style workflow monitoring, provider/model posture, and evidence-backed profile evolution remain the larger v0.9 workbench goal. |
+CodeWhale turns that thesis into plain runtime surfaces:
 
-The current release acceptance matrix lives in
-[docs/V0_9_0_RELEASE_ACCEPTANCE.md](docs/V0_9_0_RELEASE_ACCEPTANCE.md), with
-the HarnessProfile runtime boundary documented in
-[docs/HARNESS_PROFILE_CUTLINE.md](docs/HARNESS_PROFILE_CUTLINE.md).
+- approval-gated file, shell, git, web, MCP, RLM, and sub-agent tools;
+- side-git snapshots and `/restore` rollback outside your repo's `.git`;
+- live diagnostics after edits from language servers where available;
+- concurrent sub-agents for parallel investigation and implementation;
+- durable sessions, forks, relay handoffs, and runtime APIs for editor/GUI work;
+- explicit provider/model routing with DeepSeek V4 first-class and other
+  OpenAI-compatible routes kept separate.
 
-## Release Status
-
-The latest published release line is still separate from the v0.9 integration
-branch. v0.9.0 work in this README describes the current integration track, not
-a published release artifact. Release-specific detail belongs in
-[CHANGELOG.md](CHANGELOG.md); this README summarizes the current user-facing
-surface and links to deeper docs.
-
-Release channels can lag each other. Before making release claims, verify the
-intended surface directly: GitHub Releases and checksums, npm `codewhale`,
-Cargo crates, Docker/GHCR images, CNB mirrors, and any legacy Homebrew formula.
-No tag, GitHub Release, npm/Cargo publish, Docker publish, or release artifact
-push should happen without explicit maintainer approval.
-
-## Quickstart
-
-```bash
-npm install -g codewhale
-codewhale --version
-codewhale --model auto
-```
-
-On first launch, CodeWhale prompts for a DeepSeek API key and saves it to
-`~/.codewhale/config.toml`; the legacy `~/.deepseek/config.toml` path is still
-read for compatibility. You can also set credentials directly:
-
-```bash
-codewhale auth set --provider deepseek
-codewhale auth status
-codewhale doctor
-```
-
-Use `/provider`, `/model`, `/config`, `/statusline`, `/skills`, and `/restore`
-inside the TUI. Prefix a composer line with `!` to run a shell command through
-the normal approval and sandbox path, for example `! cargo test -p codewhale-tui`.
+DeepSeek is first-class, not exclusive. CodeWhale also carries provider paths for
+OpenRouter, NVIDIA NIM, Xiaomi MiMo, Arcee, SiliconFlow, Fireworks, Novita,
+OpenAI-compatible gateways, self-hosted SGLang/vLLM, Ollama, and Hugging Face
+surfaces as they land.
 
 ## Install
-
-`codewhale` installs as a matched pair of self-contained Rust release binaries:
-the `codewhale` dispatcher command and the sibling `codewhale-tui` runtime it
-launches for interactive sessions. npm and Docker install both for you; Cargo
-and manual installs must put both binaries in the same directory
-(normally a directory on your `PATH`). The npm package is only an
-installer/wrapper for those release binaries; the agent does not run on Node.
-
-```bash
-# 1. npm — easiest if you already use Node. The package downloads the
-#    matching prebuilt Rust binaries from GitHub Releases.
-npm install -g codewhale
-
-# 2. Cargo — no Node needed. Requires Rust 1.88+ (the crates use the
-#    2024 edition; older toolchains fail with "feature `edition2024` is
-#    required"). Run `rustup update` first, or use a non-Cargo path below.
-cargo install codewhale-cli --locked   # `codewhale` (entry point)
-cargo install codewhale-tui     --locked   # `codewhale-tui` (TUI binary)
-
-# 3. Homebrew — legacy compatibility only.
-#    The tap/formula still uses the old deepseek-tui name. Prefer npm, Cargo,
-#    Docker, or direct downloads for new installs until the formula is renamed.
-brew tap Hmbown/deepseek-tui
-brew install deepseek-tui
-
-# 4. Direct download — platform archive from GitHub Releases.
-#    https://github.com/Hmbown/CodeWhale/releases
-#    Archives include both codewhale and codewhale-tui plus an install script.
-#    Individual binaries are also attached for scripts; keep the pair together.
-
-# 5. Docker — prebuilt release image.
-docker volume create codewhale-home
-docker run --rm -it \
-  -e DEEPSEEK_API_KEY="$DEEPSEEK_API_KEY" \
-  -v codewhale-home:/home/codewhale/.codewhale \
-  -v "$PWD:/workspace" \
-  -w /workspace \
-  ghcr.io/hmbown/codewhale:latest
-```
-
-> In mainland China, speed up the npm path with
-> `--registry=https://registry.npmmirror.com`, or use the
-> [Cargo mirror](#china--mirror-friendly-installation) below.
->
-> Download safety: official release binaries live under
-> `https://github.com/Hmbown/CodeWhale/releases`. For manual downloads,
-> verify the SHA-256 manifest and avoid look-alike repositories or search-result
-> mirrors. See [download safety and checksums](docs/INSTALL.md#2-download-safety-and-checksums).
-
-Already installed? Use the updater that matches the install path:
-
-```bash
-codewhale update                         # release-binary updater
-npm install -g codewhale@latest      # npm wrapper
-brew update && brew upgrade deepseek-tui  # legacy Homebrew installs only
-cargo install codewhale-cli --locked --force
-cargo install codewhale-tui     --locked --force
-```
-
-`codewhale update --proxy https://localhost:7897` routes update checks and
-downloads through a proxy.
-
----
-
-## Harness Model
-
-A model answers a question. An agent finishes a task. The difference is the
-harness: the rules, tools, evidence, and feedback that keep the model oriented
-when user intent, repo instructions, tool output, stale memory, and prior
-handoffs all compete inside one turn.
-
-CodeWhale's harness has four practical parts:
-
-| Part | What it does |
-| --- | --- |
-| Prompt constitution | `crates/tui/src/prompts/base.md` gives the model a stable authority hierarchy: live user intent beats stale instructions, live tool output beats assumptions, and verification beats confidence. |
-| Typed tool surface | Shell, file, git, web, MCP, RLM, image, and sub-agent tools are registered with explicit schemas, visibility rules, and compatibility aliases. |
-| Runtime evidence loop | Side-git snapshots, LSP diagnostics, command output, cost/cache accounting, and task state are fed back into the transcript instead of hidden behind the UI. |
-| Approval and sandbox posture | Plan is read-only, Agent uses approval gates, and YOLO auto-approves in trusted workspaces. macOS Seatbelt is enforced; Linux Landlock is detected but not yet enforced; Windows sandboxing is not advertised. |
-
-### Relay And Continuity
-
-Relay is intentional compaction for human and agent handoff. Use `/relay` before
-a long break, a fresh thread, a fork, or a handoff to another agent. It keeps the
-important story small: the objective, why the work is being done, current state,
-changed files, evidence checked, constraints, blockers, and the next concrete
-action.
-
-Automatic compaction protects context windows. Relay protects continuity. In
-the v0.9 track, rich PlanArtifact fields feed the transcript card, Plan-mode
-confirmation, `/relay`, fork-state handoff, and saved-session replay so the
-plan, the evidence, and the next step do not become separate stories.
-
-`codewhale` is the dispatcher CLI. `codewhale-tui` is the companion runtime
-binary it launches for interactive sessions. The TUI talks to an async engine,
-an OpenAI-compatible streaming client, the tool registry, the durable task
-queue, the LSP subsystem, and optional HTTP/SSE or ACP servers. See
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full walkthrough.
-
-### Auto Model Routing
-
-`--model auto` is the default. Before the real turn is sent, CodeWhale makes a
-small `deepseek-v4-flash` routing call with thinking off. That local router
-selects the concrete model and thinking level for the real request:
-
-- Model: `deepseek-v4-flash` or `deepseek-v4-pro`
-- Thinking: `off`, `high`, or `max`
-
-The upstream API never receives `model: "auto"`; it receives the concrete route
-chosen for that turn. Use a fixed model or thinking level for repeatable
-benchmarking, strict cost ceilings, or exact provider/model mapping.
-
-### Sub-agents
-
-Sub-agents run concurrently in the background. `agent_open` returns immediately;
-the child receives its own context and tool registry, then reports back with a
-completion sentinel and a human-readable summary. The full child transcript
-stays behind a bounded handle that the parent can inspect through `agent_eval`.
-
-Default concurrency is 10 and configurable up to 20. See
-[docs/SUBAGENTS.md](docs/SUBAGENTS.md) for role taxonomy, lifecycle, wait/eval
-tools, and transcript-handle details.
-
-## Provider Routes
-
-For the full provider registry, model IDs, auth variables, base URLs, and
-capability boundaries, see [docs/PROVIDERS.md](docs/PROVIDERS.md).
-
-Provider and model are deliberately separate choices. `provider` is the route,
-account, endpoint, and credential source; `model` is the model ID on that route.
-That distinction matters when the same model family appears through direct APIs
-and OpenRouter aliases.
-
-| Provider | Typical model IDs | Notes |
-| --- | --- | --- |
-| `deepseek` | `deepseek-v4-pro`, `deepseek-v4-flash` | Default direct DeepSeek route. |
-| `openrouter` | `deepseek/deepseek-v4-pro`, `arcee-ai/trinity-large-thinking`, `minimax/minimax-m3` | OpenRouter route; keep these IDs distinct from direct provider IDs. |
-| `arcee` | `trinity-large-thinking`, `trinity-large-preview`, `trinity-mini` | Direct Arcee API at `https://api.arcee.ai/api/v1`. |
-| `xiaomi-mimo` | `mimo-v2.5-pro`, `mimo-v2.5`, TTS IDs | Token Plan keys (`tp-...`) use `api-key` auth and default to the Token Plan endpoint; pay-as-you-go keys can set the MiMo API endpoint explicitly. |
-| `nvidia-nim` | `deepseek-ai/deepseek-v4-pro` | Uses NVIDIA account terms and model IDs. |
-| `siliconflow` / `siliconflow-CN` | `deepseek-ai/DeepSeek-V4-Pro` | SiliconFlow global and China routes. |
-| `fireworks` | `accounts/fireworks/models/deepseek-v4-pro` | Fireworks route. |
-| `openai` | Your gateway's model ID | Generic OpenAI-compatible endpoint. |
-| `huggingface` | `deepseek-ai/DeepSeek-V4-Pro` | Hugging Face router route. |
-| `sglang`, `vllm`, `ollama` | Local model IDs/tags | Self-hosted routes. |
-
-```bash
-codewhale auth set --provider openrouter --api-key "YOUR_OPENROUTER_API_KEY"
-codewhale --provider openrouter --model deepseek/deepseek-v4-pro
-
-codewhale auth set --provider arcee --api-key "YOUR_ARCEE_API_KEY"
-codewhale --provider arcee --model trinity-large-thinking
-
-codewhale auth set --provider xiaomi-mimo --api-key "YOUR_XIAOMI_KEY"
-codewhale --provider xiaomi-mimo --model mimo-v2.5-pro
-codewhale --provider xiaomi-mimo speech "Hello from MiMo" --model tts -o hello.wav
-XIAOMI_MIMO_TOKEN_PLAN_API_KEY="tp-..." XIAOMI_MIMO_MODE="token-plan-sgp" \
-  codewhale --provider xiaomi-mimo --model mimo-v2.5-pro
-
-codewhale auth set --provider openai --api-key "YOUR_OPENAI_COMPATIBLE_API_KEY"
-OPENAI_BASE_URL="https://openai-compatible.example/v4" \
-  codewhale --provider openai --model glm-5
-
-SGLANG_BASE_URL="http://localhost:30000/v1" \
-  codewhale --provider sglang --model deepseek-v4-flash
-```
-
-Inside the TUI, `/provider` opens the provider picker and `/model` opens the
-model/thinking picker. `/models` fetches live API model lists when the active
-provider supports listing.
-
-## Platform Notes
-
-Prebuilt binary pairs and platform archives are published for Linux x64, Linux
-ARM64, macOS x64, macOS ARM64, and Windows x64. For other targets, see
-[docs/INSTALL.md](docs/INSTALL.md).
-
-For HarmonyOS PC and OpenHarmony cross-build setup, see [docs/HarmonyOS.md](docs/HarmonyOS.md).
-
-### China / Mirror-friendly Installation
-
-If GitHub or npm downloads are slow from mainland China, use
-`npm install -g codewhale --registry=https://registry.npmmirror.com`, download
-from GitHub Releases, or configure a Cargo registry mirror:
-
-```toml
-# ~/.cargo/config.toml
-[source.crates-io]
-replace-with = "tuna"
-
-[source.tuna]
-registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"
-```
-
-Then install both binaries:
 
 ```bash
 cargo install codewhale-cli --locked
 cargo install codewhale-tui --locked
 codewhale --version
+codewhale --model auto
 ```
 
-Use `DEEPSEEK_TUI_RELEASE_BASE_URL` for mirrored release assets.
+On first launch, CodeWhale prompts for a DeepSeek API key and stores it in
+`~/.codewhale/config.toml`; legacy `~/.deepseek/` config is still read for
+compatibility.
 
-### Windows
-
-The Scoop `codewhale` manifest can lag GitHub/npm/Cargo releases. Run
-`scoop update` first, then verify with `codewhale --version`. Use npm or direct
-GitHub release downloads when you need the newest release immediately.
-
-### Remote-first Workspaces
-
-For an always-on workspace you can control from a phone, use the Tencent-native
-path: CNB mirror/source, Tencent Lighthouse HK, a Feishu/Lark long-connection
-bridge, and optional EdgeOne for a deliberate public HTTPS edge. The runtime API
-stays bound to localhost; EdgeOne is not used to expose `/v1/*`.
-
-Start with [docs/TENCENT_CLOUD_REMOTE_FIRST.md](docs/TENCENT_CLOUD_REMOTE_FIRST.md),
-then use [docs/TENCENT_LIGHTHOUSE_HK.md](docs/TENCENT_LIGHTHOUSE_HK.md) for the
-server runbook.
-
-<details id="install-from-source">
-<summary>Install from source</summary>
-
-Works on any Tier-1 Rust target including musl, riscv64, FreeBSD, and older
-ARM64 distros.
+Other install paths are supported:
 
 ```bash
-# Linux build deps (Debian/Ubuntu/RHEL):
-#   sudo apt-get install -y build-essential pkg-config libdbus-1-dev
-#   sudo dnf install -y gcc make pkgconf-pkg-config dbus-devel
+# Platform archives are attached to GitHub Releases.
+# https://github.com/Hmbown/CodeWhale/releases
 
-git clone https://github.com/Hmbown/CodeWhale.git
-cd CodeWhale
+# CNB mirror path for users who cannot reliably reach GitHub:
+cargo install --git https://cnb.cool/codewhale.net/codewhale --tag v0.8.54 codewhale-cli --locked --force
+cargo install --git https://cnb.cool/codewhale.net/codewhale --tag v0.8.54 codewhale-tui --locked --force
 
-cargo install --path crates/cli --locked
-cargo install --path crates/tui --locked
+# Legacy Homebrew compatibility while the formula is renamed
+brew tap Hmbown/deepseek-tui
+brew install deepseek-tui
 ```
 
-Both binaries are required. Rust 1.88+ is required because the crates use the
-2024 edition.
+The `codewhale` npm wrapper for v0.8.54 is intentionally deferred while the
+release asset publication path is being hardened. Use Cargo, GitHub Releases,
+or CNB for this release.
 
-</details>
+For Docker, direct downloads, China mirrors, Windows/Scoop, Nix, checksums, and
+troubleshooting, use [docs/INSTALL.md](docs/INSTALL.md) or the website install
+page.
 
----
-
-## Release Notes
-
-Release-specific changes live in [CHANGELOG.md](CHANGELOG.md). This README
-stays focused on current install paths, core workflows, provider setup, runtime
-interfaces, and extension points.
-
----
-
-## Usage
+## First Run
 
 ```bash
-codewhale                                         # interactive TUI
-codewhale "explain this function"                 # one-shot prompt
-codewhale exec --auto --output-format stream-json "fix this bug"  # NDJSON backend stream
-codewhale exec --resume <SESSION_ID> "follow up"  # continue a non-interactive session
-codewhale --model deepseek-v4-flash "summarize"   # model override
-codewhale --model auto "fix this bug"             # auto-select model + thinking
-codewhale --yolo                                  # auto-approve tools
-codewhale auth set --provider deepseek            # save API key
-codewhale doctor                                  # check setup & connectivity
-codewhale doctor --json                           # machine-readable diagnostics
-codewhale setup --status                          # read-only setup status
-codewhale setup --tools --plugins                 # scaffold tool/plugin dirs
-codewhale models                                  # list live API models
-codewhale sessions                                # list saved sessions with timestamps
-codewhale resume --last                           # resume the most recent session in this workspace
-codewhale resume <SESSION_ID>                     # resume a specific session by UUID
-codewhale fork <SESSION_ID>                       # fork a saved session into a sibling path
-codewhale serve --http                            # HTTP/SSE API server
-codewhale serve --mobile                          # LAN mobile control page; token-gated by default
-codewhale serve --acp                             # ACP stdio adapter for Zed/custom agents
-codewhale run pr <N>                              # fetch PR and pre-seed review prompt
-codewhale mcp list                                # list configured MCP servers
-codewhale mcp validate                            # validate MCP config/connectivity
-codewhale mcp-server                              # run dispatcher MCP stdio server
-codewhale update                                  # check for and apply binary updates
+codewhale auth set --provider deepseek
+codewhale auth status
+codewhale doctor
+codewhale
 ```
 
-Inside the interactive TUI composer, prefix a line with `!` to run a shell
-command through the normal approval, sandbox, and output surfaces, for example
-`! cargo test -p codewhale-tui sidebar`.
+Useful in-session commands:
 
-### Branching Conversations
+- `/provider` and `/model` choose the route and model.
+- `/config` edits runtime settings.
+- `/statusline` shows the current route, cost, and session state.
+- `/skills` loads reusable workflows from `~/.codewhale/skills/`.
+- `/restore` rolls back a prior turn from side-git snapshots.
+- `! cargo test -p codewhale-tui` runs a shell command through the normal
+  approval and sandbox path.
 
-Saved sessions are intentionally branchable. `codewhale fork <SESSION_ID>` copies
-an existing saved session into a new sibling session, records the parent session
-id in metadata, and opens that fork so you can explore an alternate direction
-without polluting the original path. The session picker and `codewhale sessions`
-mark forked sessions with their parent id.
+## Where Details Live
 
-`codewhale sessions` lists saved sessions across workspaces and includes the
-last-updated timestamp. `codewhale resume --last` and `codewhale --continue`
-choose the latest session for the current workspace; pass an explicit session id
-when resuming work from another directory.
+The README carries the idea and the first path. The details live in docs and on
+[codewhale.net](https://codewhale.net/):
 
-Inside the TUI, Esc-Esc backtrack can rewind the active transcript to a prior
-user prompt and put that prompt back in the composer for editing. `/restore`
-and `revert_turn` are separate workspace rollback tools: they restore files
-from side-git snapshots but do not rewrite conversation history.
+- [User guide](docs/GUIDE.md) — first hour with CodeWhale.
+- [Install guide](docs/INSTALL.md) — every package path and troubleshooting.
+- [Configuration](docs/CONFIGURATION.md) — config files, repo constitution, and
+  provider settings.
+- [Provider registry](docs/PROVIDERS.md) — model routes, credentials, base URLs,
+  and capability boundaries.
+- [Sub-agents](docs/SUBAGENTS.md) — roles, lifecycle, output contract, and
+  recovery behavior.
+- [Runtime API](docs/RUNTIME_API.md) — HTTP/SSE, ACP, mobile, and GUI/editor
+  integration contracts.
+- [Model Lab](docs/MODEL_LAB.md) — open-model discovery and evaluation roadmap.
+- [Architecture](docs/ARCHITECTURE.md) — crate layout, runtime flow, tool system,
+  extension points, and security model.
+- [v0.9.0 release acceptance](docs/V0_9_0_RELEASE_ACCEPTANCE.md) — current
+  integration checks before release tagging.
 
-Docker images are published to GHCR for release builds:
+## v0.9.0 Track
 
-```bash
-docker volume create codewhale-home
+v0.9.0 is the current integration lane, not a published release until the tag,
+GitHub Release, npm package, Cargo crates, and release artifacts are actually
+cut and verified.
 
-docker run --rm -it \
-  -e DEEPSEEK_API_KEY="$DEEPSEEK_API_KEY" \
-  -v codewhale-home:/home/codewhale/.codewhale \
-  -v "$PWD:/workspace" \
-  -w /workspace \
-  ghcr.io/hmbown/codewhale:latest
-```
+The release line is gathering work around:
 
-See [docs/DOCKER.md](docs/DOCKER.md) for pinned tags, local image builds,
-volume ownership notes, and non-interactive pipeline usage.
+- stronger relay and handoff surfaces;
+- calmer transcripts for dense tool runs;
+- command and provider architecture cleanup;
+- runtime APIs for VS Code and GUI clients;
+- typed HarnessProfile posture and model routing;
+- WhaleFlow branch/leaf workflow orchestration;
+- contributor credit hygiene for harvested and direct community PRs.
 
-### Zed / ACP
-
-CodeWhale can run as a custom Agent Client Protocol server for editors that
-spawn local ACP agents over stdio. In Zed, add a custom agent server:
-
-```json
-{
-  "agent_servers": {
-    "DeepSeek": {
-      "type": "custom",
-      "command": "codewhale",
-      "args": ["serve", "--acp"],
-      "env": {}
-    }
-  }
-}
-```
-
-The first ACP slice supports new sessions and prompt responses through your
-existing DeepSeek config/API key. Tool-backed editing and checkpoint replay are
-not exposed through ACP yet.
-
-Community-maintained adapter: [acp-codewhale-adapter](https://github.com/rockeverm3m/acp-codewhale-adapter)
-bridges `codewhale exec --auto` to `cc-connect` for users who need tool-backed
-ACP workflows outside the built-in Zed slice.
-
-### Keyboard Shortcuts
-
-| Key | Action |
-|---|---|
-| `Tab` | Complete `/` or `@` entries; while running, queue draft as follow-up; otherwise cycle mode |
-| `Shift+Tab` | Cycle reasoning-effort: off → high → max |
-| `F1` | Searchable help overlay |
-| `Esc` | Back / dismiss |
-| `Ctrl+K` | Command palette |
-| `Ctrl+R` | Resume an earlier session |
-| `Alt+R` | Search prompt history and recover cleared drafts |
-| `Ctrl+S` | Stash current draft (`/stash list`, `/stash pop` to recover) |
-| `@path` | Attach file/directory context in composer |
-| `↑` (at composer start) | Select attachment row for removal |
-
-Full shortcut catalog: [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
-
----
-
-## Modes
-
-| Mode | Behavior |
-| --- | --- |
-| **Plan** 🔍 | Read-only investigation — model explores and proposes a plan before making changes; multi-step investigations use `checklist_write` |
-| **Agent** 🤖 | Default interactive mode — multi-step tool use with approval gates; substantial work is tracked with `checklist_write` |
-| **YOLO** ⚡ | Auto-approve all tools in a trusted workspace; multi-step work still keeps a visible checklist |
-
----
-
-## Configuration
-
-User config: `~/.codewhale/config.toml` (legacy `~/.deepseek/config.toml` fallback). Project overlay: `<workspace>/.codewhale/config.toml` (legacy `<workspace>/.deepseek/config.toml`) (denied: `api_key`, `base_url`, `provider`, `mcp_config_path`). [config.example.toml](config.example.toml) has every option.
-
-The TUI footer can be trimmed with `/statusline`, or by setting
-`[tui].status_items` in config. Current footer customization selects from the
-built-in chips such as `mode`, `model`, `status`, `git_branch`, `tokens`, and
-`cache`; chip order is controlled by the order of keys in `status_items` in
-`config.toml`. The interactive picker writes the canonical order. Multi-line
-layouts, custom colors, and external command widgets are not part of the
-current statusline surface.
-
-Custom DeepSeek-compatible endpoints usually do not need a new provider. Keep
-`provider = "deepseek"` and set `[providers.deepseek].base_url` / `model`, or
-use `provider = "openai"` for generic OpenAI-compatible gateways. Keep
-`provider`, `api_key`, and `base_url` in user config or environment variables;
-project overlays cannot set them.
-
-Key environment variables:
-
-| Variable | Purpose |
-|---|---|
-| `DEEPSEEK_API_KEY` | API key |
-| `DEEPSEEK_BASE_URL` | API base URL |
-| `DEEPSEEK_HTTP_HEADERS` | Optional custom model request headers, e.g. `X-Model-Provider-Id=your-model-provider` |
-| `DEEPSEEK_MODEL` | Default model |
-| `DEEPSEEK_STREAM_IDLE_TIMEOUT_SECS` | Legacy stream idle timeout env override, default `300`, clamped to `1..=3600`; `[tui].stream_chunk_timeout_secs` takes precedence when configured |
-| `CODEWHALE_PROVIDER` / `DEEPSEEK_PROVIDER` | `deepseek` (default), `nvidia-nim`, `openai`, `atlascloud`, `wanjie-ark`, `volcengine`, `openrouter`, `xiaomi-mimo`, `novita`, `fireworks`, `siliconflow`, `siliconflow-CN`, `arcee`, `moonshot`, `sglang`, `vllm`, `ollama`, `huggingface` |
-| `DEEPSEEK_PROFILE` | Config profile name |
-| `DEEPSEEK_MEMORY` | Set to `on` to enable user memory |
-| `DEEPSEEK_ALLOW_INSECURE_HTTP=1` | Allow non-local `http://` API base URLs on trusted networks |
-| `NVIDIA_API_KEY` / `OPENAI_API_KEY` / `ATLASCLOUD_API_KEY` / `WANJIE_ARK_API_KEY` / `VOLCENGINE_API_KEY` / `VOLCENGINE_ARK_API_KEY` / `ARK_API_KEY` / `OPENROUTER_API_KEY` / `XIAOMI_MIMO_TOKEN_PLAN_API_KEY` / `MIMO_TOKEN_PLAN_API_KEY` / `XIAOMI_MIMO_API_KEY` / `XIAOMI_API_KEY` / `MIMO_API_KEY` / `NOVITA_API_KEY` / `FIREWORKS_API_KEY` / `SILICONFLOW_API_KEY` / `ARCEE_API_KEY` / `MOONSHOT_API_KEY` / `KIMI_API_KEY` / `SGLANG_API_KEY` / `VLLM_API_KEY` / `OLLAMA_API_KEY` / `HUGGINGFACE_API_KEY` / `HF_TOKEN` | Provider auth |
-| `OPENAI_BASE_URL` / `OPENAI_MODEL` | Generic OpenAI-compatible endpoint and model ID |
-| `ATLASCLOUD_BASE_URL` / `ATLASCLOUD_MODEL` | AtlasCloud endpoint and model override |
-| `WANJIE_ARK_BASE_URL` / `WANJIE_ARK_MODEL` | Wanjie Ark endpoint and model override |
-| `VOLCENGINE_BASE_URL` / `VOLCENGINE_ARK_BASE_URL` / `ARK_BASE_URL` / `VOLCENGINE_MODEL` / `VOLCENGINE_ARK_MODEL` | Volcengine Ark endpoint and model override |
-| `OPENROUTER_BASE_URL` | OpenRouter endpoint override |
-| `XIAOMI_MIMO_BASE_URL` / `MIMO_BASE_URL` / `XIAOMI_MIMO_MODEL` / `MIMO_MODEL` / `XIAOMI_MIMO_MODE` / `MIMO_MODE` | Xiaomi MiMo endpoint, model, and Token Plan mode override; Token Plan default is `https://token-plan-sgp.xiaomimimo.com/v1` |
-| `NOVITA_BASE_URL` | Novita endpoint override |
-| `FIREWORKS_BASE_URL` | Fireworks endpoint override |
-| `SILICONFLOW_BASE_URL` / `SILICONFLOW_MODEL` | SiliconFlow endpoint and model override |
-| `ARCEE_BASE_URL` / `ARCEE_MODEL` | Arcee AI endpoint and model override |
-| `SGLANG_BASE_URL` | Self-hosted SGLang endpoint |
-| `SGLANG_MODEL` | Self-hosted SGLang model ID |
-| `VLLM_BASE_URL` | Self-hosted vLLM endpoint |
-| `VLLM_MODEL` | Self-hosted vLLM model ID |
-| `OLLAMA_BASE_URL` | Self-hosted Ollama endpoint |
-| `OLLAMA_MODEL` | Self-hosted Ollama model tag |
-| `HUGGINGFACE_API_KEY` / `HF_TOKEN` / `HUGGINGFACE_BASE_URL` / `HUGGINGFACE_MODEL` | Hugging Face endpoint and model override |
-| `NO_ANIMATIONS=1` | Force accessibility mode at startup |
-| `SSL_CERT_FILE` | Custom CA bundle for corporate proxies; prefer this over provider-local `insecure_skip_tls_verify` |
-
-Set `locale` in `settings.toml`, use `/config locale zh-Hans`, or rely on `LC_ALL`/`LANG` to choose UI chrome and the fallback language sent to V4 models. The latest user message still wins for natural-language reasoning and replies, so Chinese user turns stay Chinese even on an English system locale. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and [docs/MCP.md](docs/MCP.md).
-
----
-
-## Models & Cost Tracking
-
-CodeWhale tracks the provider route, concrete model, prompt-cache hit/miss
-estimate, input tokens, and output tokens for the turn that actually ran. Auto
-mode is resolved before the upstream request, so the footer and session summary
-charge against `deepseek-v4-flash`, `deepseek-v4-pro`, or the explicit provider
-model selected for that turn.
-
-Pricing changes over time and can vary by account, region, provider route, and
-promotion. Use [docs/PROVIDERS.md](docs/PROVIDERS.md) for supported model IDs
-and the provider's official pricing pages for billing decisions. Treat the TUI
-cost display as a local estimate, not a receipt.
-
-DeepSeek Platform defaults to `https://api.deepseek.com/beta` so beta-gated API
-features can be tested without extra setup. Set `base_url =
-"https://api.deepseek.com"` to opt out. Legacy aliases `deepseek-chat` /
-`deepseek-reasoner` remain compatibility shims; prefer V4 model IDs for new
-config. NVIDIA NIM variants use your NVIDIA account terms.
-
----
-
-## Publishing Your Own Skill
-
-codewhale discovers skills from workspace directories (`.agents/skills` → `skills` → `.opencode/skills` → `.claude/skills` → `.cursor/skills`) and global directories (`~/.agents/skills` → `~/.claude/skills` → `~/.codewhale/skills` → `~/.deepseek/skills`). Each skill is a directory with a `SKILL.md` file:
-
-```text
-~/.agents/skills/my-skill/
-└── SKILL.md
-```
-
-Frontmatter required:
-
-```markdown
----
-name: my-skill
-description: Use this when DeepSeek should follow my custom workflow.
----
-
-# My Skill
-Instructions for the agent go here.
-```
-
-Commands: `/skills` (list), `/skill <name>` (activate), `/skill new` (scaffold), `/skill install github:<owner>/<repo>` (community), `/skill update` / `uninstall` / `trust`. Community installs from GitHub require no backend service. Installed skills appear in the model-visible session context; the agent can auto-select relevant skills via the `load_skill` tool when your task matches their descriptions.
-
-First launch also installs bundled system skills for common workflows:
-`skill-creator`, `delegate`, `v4-best-practices`, `plugin-creator`,
-`skill-installer`, `mcp-builder`, `documents`, `presentations`,
-`spreadsheets`, `pdf`, and `feishu`. These live under
-`~/.codewhale/skills` (or legacy `~/.deepseek/skills`) and are versioned so new bundles are added on upgrade
-without recreating skills the user deliberately deleted.
-
----
-
-## Documentation
-
-| Doc | Topic |
-|---|---|
-| [GUIDE.md](docs/GUIDE.md) | First-run user guide |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Codebase internals |
-| [CONFIGURATION.md](docs/CONFIGURATION.md) | Full config reference |
-| [PROVIDERS.md](docs/PROVIDERS.md) | Provider IDs, auth, model defaults, and capability metadata |
-| [MODES.md](docs/MODES.md) | Plan / Agent / YOLO modes |
-| [MCP.md](docs/MCP.md) | Model Context Protocol integration |
-| [RUNTIME_API.md](docs/RUNTIME_API.md) | HTTP/SSE API server and mobile control page |
-| [INSTALL.md](docs/INSTALL.md) | Platform-specific install guide |
-| [DOCKER.md](docs/DOCKER.md) | GHCR image, volumes, and Docker usage |
-| [CNB_MIRROR.md](docs/CNB_MIRROR.md) | CNB mirror and China-friendly install notes |
-| [TENCENT_CLOUD_REMOTE_FIRST.md](docs/TENCENT_CLOUD_REMOTE_FIRST.md) | Tencent/CNB/Lighthouse/Feishu remote-first path |
-| [TENCENT_LIGHTHOUSE_HK.md](docs/TENCENT_LIGHTHOUSE_HK.md) | Lighthouse Hong Kong server setup |
-| [MEMORY.md](docs/MEMORY.md) | User memory feature guide |
-| [AGENT_ETHOS.md](docs/AGENT_ETHOS.md) | Maintainer and agent stewardship posture |
-| [SUBAGENTS.md](docs/SUBAGENTS.md) | Sub-agent role taxonomy and lifecycle |
-| [KEYBINDINGS.md](docs/KEYBINDINGS.md) | Full shortcut catalog |
-| [RELEASE_RUNBOOK.md](docs/RELEASE_RUNBOOK.md) | Release process |
-| [LOCALIZATION.md](docs/LOCALIZATION.md) | UI locale matrix & switching |
-| [OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) | Ops & recovery |
-| [V0_9_0_RELEASE_ACCEPTANCE.md](docs/V0_9_0_RELEASE_ACCEPTANCE.md) | v0.9.0 pre-tag acceptance matrix and release gates |
-| [HARNESS_PROFILE_CUTLINE.md](docs/HARNESS_PROFILE_CUTLINE.md) | HarnessProfile schema, resolver, and runtime boundary for v0.9 |
-| [2574-provider-fallback-chain.md](docs/rfcs/2574-provider-fallback-chain.md) | Provider fallback chain RFC |
-
-Full Changelog: [CHANGELOG.md](CHANGELOG.md).
-
----
+Release-specific details belong in [CHANGELOG.md](CHANGELOG.md) and the v0.9.0
+acceptance docs, not in this README.
 
 ## Thanks
 
