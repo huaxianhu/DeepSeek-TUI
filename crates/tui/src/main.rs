@@ -1000,10 +1000,14 @@ async fn main() -> Result<()> {
                     let auto_mode = args.auto || yolo;
                     let max_turns = args.max_turns.unwrap_or(100);
                     let allowed_tools = args.allowed_tools.as_ref().map(|v| {
-                        v.iter().map(|s| s.to_ascii_lowercase().trim().to_string()).collect::<Vec<_>>()
+                        v.iter()
+                            .map(|s| s.to_ascii_lowercase().trim().to_string())
+                            .collect::<Vec<_>>()
                     });
                     let disallowed_tools = args.disallowed_tools.as_ref().map(|v| {
-                        v.iter().map(|s| s.to_ascii_lowercase().trim().to_string()).collect::<Vec<_>>()
+                        v.iter()
+                            .map(|s| s.to_ascii_lowercase().trim().to_string())
+                            .collect::<Vec<_>>()
                     });
                     run_exec_agent(
                         &config,
